@@ -1,3 +1,4 @@
+# https://www.emqx.com/ja/blog/use-mqtt-with-raspberry-pi
 # test_connect.py
 import paho.mqtt.client as mqtt
 
