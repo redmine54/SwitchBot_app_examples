@@ -8,11 +8,19 @@ scanner=btle.Scanner().withDelegate(SwitchbotScanDelegate(macaddr))
 
 def worker():
     scanner.scan(4.0)
+    current_time = time.localtime(time.time())
+    formatted_time = time.strftime('%Y-%m-%d %H:%M:%S', current_time)
     sensorValue=scanner.delegate.sensorValue
     Temperature=f"{sensorValue['Temperature']:6.1f} "
     Humidity=f"{sensorValue['Humidity']:6.1f} "
     BatteryVoltage=f"{sensorValue['BatteryVoltage']:6.1f} "
-    print(f"{time.time():.0f}  {Temperature} degC {Humidity} % {BatteryVoltage} %")
+    payload={
+        "localtime":formatted_time,
+        "Temperature":Temperature,
+        "Humidity":Humidity,
+        "BatteryVoltage":BatteryVoltage,
+    }
+    print(f"{formatted_time}  {Temperature} degC {Humidity} % {BatteryVoltage} %")
 
 def schedule(interval, f, wait=True):
     base_time = time.time()
