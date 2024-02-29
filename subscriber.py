@@ -6,15 +6,20 @@ var=0
 
 def on_connect(client, userdata, flags, rc):
     print(f"Subscriber: Connected with result code {rc}")
-    client.subscribe("raspberry/+/topic")
+    client.subscribe("raspberry/+/+")
 
 def on_message(client, userdata, msg):
     global var
     var+=1
     topic=msg.topic
+
     # バイトオブジェクトをutf-8でデコードして文字列後jsonオブジェクトに変換する
     payload = json.loads(msg.payload.decode("utf-8").replace("'", '"'))
-    print(f"Subscriber: {var} msg:{topic} {payload}")
+    if topic=='raspberry/A001/topic':
+        print(f"Subscriber: {var}  msg:{topic} {payload}")
+    if topic=='raspberry/A040/topic':
+        print(f"Subscriber: {var} >msg:{topic} {payload}")
+
 
 client=mqtt.Client()
 client.on_connect=on_connect

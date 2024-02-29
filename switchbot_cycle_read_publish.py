@@ -13,6 +13,16 @@ def on_connect(client, userdata, flags, rc):
 
 
 macaddr='D1:E0:78:0E:BA:00'
+broker={
+    "host":"broker.emqx.io",
+    "port":1883,
+    "timeout":60,
+    "qos":0
+}
+topicbase='raspberry/[x]/topic'
+retain=False
+copycount=40
+
 scanner=btle.Scanner().withDelegate(SwitchbotScanDelegate(macaddr))
 
 class MyThread(threading.Thread):
@@ -21,19 +31,19 @@ class MyThread(threading.Thread):
         super().__init__()
         self._client = client
         self._topic = topic
-        self.scan_timeout = cycle-0.8
+        self.scan_timeout = cycle-2.0
 
     def scan_switchbot(self):
         global tss
         sensorValues={}
         ts=time.time()
         current_time = time.localtime(ts)
-        sensorValue={"type":'switchbot'}
+        sensorValue={}
         sensorValue["localtime"]=time.strftime('%Y-%m-%d %H:%M:%S',current_time)
         scanner.scan(self.scan_timeout)
         sensorValue.update(scanner.delegate.sensorValue)
 
-        for i in range(40):
+        for i in range(copycount):
             # 各センサー値を乱数使用して変動させる（シミュレーション）
             topic=self._topic.replace("[x]",f"A{(i+1):03}")
             sensorValues[topic]=sensorValue.copy()
@@ -51,7 +61,7 @@ class MyThread(threading.Thread):
         ts1=time.time()
         for topic in sensorValues.keys():
             # スキャンデータを送信
-            self._client.publish(topic, payload=str(sensorValues[topic]), qos=0, retain=False)
+            self._client.publish(topic, payload=str(sensorValues[topic]), qos=broker["qos"], retain=retain)
 
         print(f"{ts:.0f} cycle:{(ts-tss):.6f}  SwitchBot Scan:{(ts1-ts):.3f} sec")
         tss=ts
@@ -60,15 +70,15 @@ def schedule(interval, worker, wait=True):
 
     client=mqtt.Client()
     client.on_connect=on_connect
-    client.connect("broker.emqx.io", 1883, 60)
+    client.connect(broker["host"], broker["port"], broker["timeout"])
     client.loop_start()
-    topic='raspberry/[x]/topic'
+
 
     base_time = time.time()
     next_time = 0
     flag=True
     while flag:
-        t = worker(client, topic, interval)
+        t = worker(client, topicbase, interval)
         t.start()
         if wait:
             t.join()
