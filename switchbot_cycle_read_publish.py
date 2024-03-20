@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+from dotenv import load_dotenv
 import time
 import datetime as dt
 from datetime import timezone
@@ -17,18 +19,20 @@ tss=time.time()
 def on_connect(client, userdata, flags, rc):
     print(f"Publisher: Connected with result code {rc}")
 
+load_dotenv(".env")
+broker_host=os.environ.get("broker_host")
+broker_port=int(os.environ.get("broker_port"))
+broker_timeout=int(os.environ.get("broker_timeout"))
+broker_topic=os.environ.get("broker_topic")
+broker_qos=int(os.environ.get("broker_qos"))
 
-macaddr='D1:E0:78:0E:BA:00'
-broker={
-    "host":"broker.emqx.io",
-    "port":1883,
-    "timeout":60,
-    "qos":0
-}
-time_format='%Y-%m-%dT%H:%M:%SZ'
-topicbase='raspberry/[x]/topic'
-retain=False
-copycount=40
+time_format=os.environ.get('time_format')
+macaddr=os.environ.get('macaddr')
+topicbase=os.environ.get("topic_base")
+retain = False if os.environ.get("retain") == 'False' else True
+
+copycount=int(os.environ.get("copycount"))
+cycle=int(os.environ.get("cycle"))
 
 scanner=btle.Scanner().withDelegate(SwitchbotScanDelegate(macaddr))
 
@@ -46,8 +50,6 @@ class MyThread(threading.Thread):
         TZ = str(get_localzone())  # TimeZone
         now_utc = dt.datetime.now(timezone.utc)  # UTC
         str_utc=str(now_utc.strftime(time_format))
-        #ts=time.time()
-        #current_time = time.localtime(ts)
         sensorValue={}
         sensorValue["tzLocal"]=TZ
         sensorValue["utctime"]=str_utc
@@ -62,7 +64,6 @@ class MyThread(threading.Thread):
             sensorValues[topic]['Temperature']=round(sensorValues[topic]['Temperature']+(random.random()*10),1)
             sensorValues[topic]['Humidity']=round(sensorValues[topic]['Humidity']+(random.random()*20))
             sensorValues[topic]['BatteryVoltage']=round(sensorValues[topic]['BatteryVoltage']+(random.random()*5))
-        #    print(topic, sensorValues[topic]['Temperature'],sensorValues[topic]['Humidity'],sensorValues[topic]['BatteryVoltage'])
         return sensorValues
 
     def run(self):
@@ -74,7 +75,7 @@ class MyThread(threading.Thread):
         ts1=time.time()
         for topic in sensorValues.keys():
             # スキャンデータを送信
-            self._client.publish(topic, payload=str(sensorValues[topic]), qos=broker["qos"], retain=retain)
+            self._client.publish(topic, payload=str(sensorValues[topic]), qos=broker_qos, retain=retain)
 
         print(f"{now} cycle:{(ts-tss):.6f}  SwitchBot Scan:{(ts1-ts):.3f} sec")
         tss=ts
@@ -83,9 +84,8 @@ def schedule(interval, worker, wait=True):
 
     client=mqtt.Client()
     client.on_connect=on_connect
-    client.connect(broker["host"], broker["port"], broker["timeout"])
+    client.connect(broker_host, broker_port, broker_timeout)
     client.loop_start()
-
 
     base_time = time.time()
     next_time = 0
@@ -103,5 +103,5 @@ def schedule(interval, worker, wait=True):
 
 if __name__=="__main__":
     print('start')
-    schedule(5, MyThread, True)
+    schedule(cycle, MyThread, True)
     print('end')
