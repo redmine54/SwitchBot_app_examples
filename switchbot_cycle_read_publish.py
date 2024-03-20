@@ -66,6 +66,7 @@ class MyThread(threading.Thread):
     def run(self):
         global tss
         ts=time.time()
+        now=dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # センサーのデータスキャン
         sensorValues=self.scan_switchbot()
         ts1=time.time()
@@ -73,7 +74,7 @@ class MyThread(threading.Thread):
             # スキャンデータを送信
             self._client.publish(topic, payload=str(sensorValues[topic]), qos=broker["qos"], retain=retain)
 
-        print(f"{ts:.0f} cycle:{(ts-tss):.6f}  SwitchBot Scan:{(ts1-ts):.3f} sec")
+        print(f"{now} cycle:{(ts-tss):.6f}  SwitchBot Scan:{(ts1-ts):.3f} sec")
         tss=ts
 
 def schedule(interval, worker, wait=True):
