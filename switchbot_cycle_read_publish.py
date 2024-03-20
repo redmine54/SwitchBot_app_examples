@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 import time
+import datetime as dt
+from datetime import timezone
+from zoneinfo import ZoneInfo
+from tzlocal import get_localzone
+
 import threading
 from bluepy import btle
 from lib.switchbot import SwitchbotScanDelegate
@@ -37,10 +42,14 @@ class MyThread(threading.Thread):
     def scan_switchbot(self):
         global tss
         sensorValues={}
-        ts=time.time()
-        current_time = time.localtime(ts)
+        TZ = str(get_localzone())  # TimeZone
+        now_utc = dt.datetime.now(timezone.utc)  # UTC
+        str_utc=str(now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        #ts=time.time()
+        #current_time = time.localtime(ts)
         sensorValue={}
-        sensorValue["localtime"]=time.strftime('%Y-%m-%d %H:%M:%S',current_time)
+        sensorValue["LocalTimeZone"]=TZ
+        sensorValue["utctime"]=str_utc
         scanner.scan(self.scan_timeout)
         sensorValue.update(scanner.delegate.sensorValue)
 
