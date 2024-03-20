@@ -25,6 +25,7 @@ broker={
     "timeout":60,
     "qos":0
 }
+time_format='%Y-%m-%dT%H:%M:%SZ'
 topicbase='raspberry/[x]/topic'
 retain=False
 copycount=40
@@ -44,12 +45,13 @@ class MyThread(threading.Thread):
         sensorValues={}
         TZ = str(get_localzone())  # TimeZone
         now_utc = dt.datetime.now(timezone.utc)  # UTC
-        str_utc=str(now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        str_utc=str(now_utc.strftime(time_format))
         #ts=time.time()
         #current_time = time.localtime(ts)
         sensorValue={}
-        sensorValue["LocalTimeZone"]=TZ
+        sensorValue["tzLocal"]=TZ
         sensorValue["utctime"]=str_utc
+        sensorValue["timeformat"]=time_format
         scanner.scan(self.scan_timeout)
         sensorValue.update(scanner.delegate.sensorValue)
 

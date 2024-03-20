@@ -16,24 +16,25 @@ record={}
 key=''
 
 def update_db(var, point, payload):
-    print(f"{payload['localtime']} {var} {point} {payload['SensorType']} {payload['Temperature']} {payload['Humidity']} {payload['BatteryVoltage']} :Subscriber")
+    print(f"{payload['utctime']} {var} {point} {payload['SensorType']} {payload['Temperature']} {payload['Humidity']} {payload['BatteryVoltage']} :update_db")
 
 def countup(var, point, payload):
     global record, key
     if not any(record):
-        key=payload['localtime']
+        key=payload['utctime']
         record[key]=1
-    elif key == payload['localtime']:
+    elif key == payload['utctime']:
         record[key]+=1
     else:
-        now = dt.strptime(payload['localtime'], '%Y-%m-%d %H:%M:%S')
-        pre = dt.strptime(key, '%Y-%m-%d %H:%M:%S')
+        timeformat=payload['timeformat']
+        now = dt.strptime(payload['utctime'], timeformat)
+        pre = dt.strptime(key, timeformat)
         strdt=f"{now-pre}"
         print(key, point,record[key], strdt , \
-            f"{payload['SensorType']} {payload['Temperature']} {payload['Humidity']} {payload['BatteryVoltage']}" )
+            f"{payload['SensorType']} {payload['Temperature']} {payload['Humidity']} {payload['BatteryVoltage']}: subscriber" )
 
         del record[key]
-        key=payload['localtime']
+        key=payload['utctime']
         record[key]=1
 
 def on_connect(client, userdata, flags, rc):
@@ -43,6 +44,7 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     global count
     count+=1
+    #print(count)
     try:
         topic=msg.topic
         point=topic.split('/')[1]
@@ -54,7 +56,7 @@ def on_message(client, userdata, msg):
 
         if point=='A001':
             pass
-            #update_db(count, point, payload)
+            update_db(count, point, payload)
         if point=='A040':
             pass
             #update_db(count, point, payload)
